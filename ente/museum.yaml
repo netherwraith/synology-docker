@@ -62,9 +62,10 @@ smtp:
       sender-name: Ente
       encryption: tls
 
-# Lock down registration AFTER your own account has been created:
-# internal:
-#       disable-registration: true
+# Lock down registration AFTER your own account has been created and set yourself to become admin user for ente CLI:
+#internal:
+#  disable-registration: true
+#  admin: 1345748539237473 # replace this with your own user ID
 
 # Placeholders used in this file – replace with your own values
 # (keep the same values in sync with docker-compose.yml):
