@@ -1,0 +1,102 @@
+# Ente self-hosting stack – final setup for Synology (Portainer / Dockhand)
+# All public endpoints are served via reverse proxy subdomains under ente.yourdomain.tld.
+# Museum/MinIO/Web listen internally on localhost ports that the reverse proxy targets.
+#
+# BEFORE DEPLOYING:
+# 1. Create the folder /volume1/docker/ente and the subfolders on your Synology (see chat instructions)
+# 2. Place museum.yaml in /volume1/docker/ente/ (second file)
+# 3. Replace every <PLACEHOLDER> below with your own value (see table at the bottom)
+# 4. Set up the reverse proxy entries in DSM or your preferred reverse proxy (see table in chat)
+# 5. Check whether port 8080 is already in use on your Synology
+#    (Control Panel > Network > Reserved Ports). If so, adjust the left value
+#    under "ports:", e.g. "8090:8080"
+
+services:
+  museum:
+    image: ghcr.io/ente-io/server
+    container_name: ente-museum
+    restart: unless-stopped
+    ports:
+      - 8080:8080 # API
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - /volume1/docker/ente/museum.yaml:/museum.yaml:ro
+      - /volume1/docker/ente/data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/ping"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+
+  web:
+    image: ghcr.io/ente-io/web
+    container_name: ente-web
+    restart: unless-stopped
+    ports:
+      - 3000:3000 # Photos web app
+      - 3001:3001 # Accounts (used for passkeys)
+      - 3002:3002 # Public albums
+      # - 3003:3003 # Auth (not used)
+      - 3004:3004 # Cast
+      - 3005:3005 # Share (public locker)
+      - 3006:3006 # Embed
+      - 3008:3008 # Paste
+    environment:
+      ENTE_API_ORIGIN: https://api.ente.yourdomain.tld
+      ENTE_ALBUMS_ORIGIN: https://albums.ente.yourdomain.tld
+      ENTE_PHOTOS_ORIGIN: https://photos.yourdomain.tld
+
+  postgres:
+    image: postgres:15
+    container_name: ente-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ente
+      POSTGRES_PASSWORD: "<POSTGRES_PASSWORD>"
+      POSTGRES_DB: ente_db
+    healthcheck:
+      test: pg_isready -q -d ente_db -U ente
+      start_period: 40s # If your Docker-version is < 25 (current version on DSM is 24.0.2) remove this line and be patient after the first start as the DB needs to be filled with initial values first
+    volumes:
+      - /volume1/docker/ente/postgres:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio
+    container_name: ente-minio
+    restart: unless-stopped
+    ports:
+      - 3200:3200 # MinIO API
+      # - 3201:3201 # MinIO web console (optional, expose externally if needed)
+    environment:
+      MINIO_ROOT_USER: "<MINIO_ROOT_USER>"
+      MINIO_ROOT_PASSWORD: "<MINIO_ROOT_PASSWORD>"
+    command: server /data --address ":3200" --console-address ":3201"
+    volumes:
+      - /volume1/docker/ente/minio:/data
+    post_start:
+      - command: |
+          sh -c '
+          #!/bin/sh
+
+          while ! mc alias set h0 http://minio:3200 "<MINIO_ROOT_USER>" "<MINIO_ROOT_PASSWORD>" 2>/dev/null
+          do
+            echo "Waiting for minio..."
+            sleep 0.5
+          done
+
+          cd /data
+
+          mc mb -p b2-eu-cen
+          mc mb -p wasabi-eu-central-2-v3
+          mc mb -p scw-eu-fr-v3
+          '
+
+# Placeholders used in this file – replace with your own values
+# (keep the same values in sync with museum.yaml):
+#   yourdomain.tld        your own domain
+#   <POSTGRES_PASSWORD>   any strong password for the Postgres "ente" user
+#   <MINIO_ROOT_USER>     a username for MinIO, e.g. "ente-minio"
+#   <MINIO_ROOT_PASSWORD> any strong password for MinIO

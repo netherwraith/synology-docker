@@ -1,0 +1,77 @@
+# museum.yaml – belongs in /volume1/docker/ente/museum.yaml
+# Final setup: all app endpoints run through subdomains of ente.myente.tld.
+# Replace every <PLACEHOLDER> below with your own value (see table at the bottom).
+
+db:
+      host: postgres
+      port: 5432
+      name: ente_db
+      user: ente
+      password: "<POSTGRES_PASSWORD>"
+
+s3:
+      are_local_buckets: false
+      use_path_style_urls: true
+      b2-eu-cen:
+         key: "<MINIO_ROOT_USER>"
+         secret: "<MINIO_ROOT_PASSWORD>"
+         endpoint: storage.ente.myente.tld
+         region: eu-central-2
+         bucket: b2-eu-cen
+      wasabi-eu-central-2-v3:
+         key: "<MINIO_ROOT_USER>"
+         secret: "<MINIO_ROOT_PASSWORD>"
+         endpoint: storage.ente.myente.tld
+         region: eu-central-2
+         bucket: wasabi-eu-central-2-v3
+         compliance: false
+      scw-eu-fr-v3:
+         key: "<MINIO_ROOT_USER>"
+         secret: "<MINIO_ROOT_PASSWORD>"
+         endpoint: storage.ente.myente.tld
+         region: eu-central-2
+         bucket: scw-eu-fr-v3
+
+apps:
+    public-albums: https://albums.ente.myente.tld
+    cast: https://cast.ente.myente.tld
+    public-locker: https://share.ente.myente.tld
+    public-paste: https://paste.ente.myente.tld
+    embed-albums: https://embed.ente.myente.tld
+    accounts: https://accounts.ente.myente.tld
+
+webauthn:
+      rpid: ente.myente.tld
+      rporigins:
+            - https://accounts.ente.myente.tld
+
+key:
+      encryption: "<MUSEUM_ENCRYPTION_KEY>"
+      hash: "<MUSEUM_HASH_KEY>"
+
+jwt:
+      secret: "<MUSEUM_JWT_SECRET>"
+
+# SMTP for verification emails – fill in with your mail provider's values
+smtp:
+      host: smtp.example.com
+      port: 587
+      username: mailbox@example.com
+      password: "<SMTP_PASSWORD>"
+      email: mailbox@example.com
+      sender-name: Ente
+      encryption: tls
+
+# Lock down registration AFTER your own account has been created:
+# internal:
+#       disable-registration: true
+
+# Placeholders used in this file – replace with your own values
+# (keep the same values in sync with docker-compose.yml):
+#   <POSTGRES_PASSWORD>    same value as in docker-compose.yml
+#   <MINIO_ROOT_USER>      same value as in docker-compose.yml
+#   <MINIO_ROOT_PASSWORD>  same value as in docker-compose.yml
+#   <MUSEUM_ENCRYPTION_KEY> 32-byte base64 key, e.g.: head -c 32 /dev/urandom | base64
+#   <MUSEUM_HASH_KEY>       64-byte base64 key, e.g.: head -c 64 /dev/urandom | base64
+#   <MUSEUM_JWT_SECRET>     32-byte URL-safe base64 secret, e.g.:
+#                           head -c 32 /dev/urandom | base64 | tr '+/' '-_'
