@@ -53,7 +53,7 @@ Both files contain `<PLACEHOLDER>` values that must be filled in **identically a
 | `<SMTP_PASSWORD>` | Password for your mail provider (for verification emails) |
 | `smtp.example.com`, `mailbox@example.com` | Your mail provider's host/username/sender address |
 
-> Note: the domain substitution produces `ente.yourdomain.tld` for most subdomains (e.g. `api.ente.yourdomain.tld`) but `photos.yourdomain.tld` for the Photos app (no `ente.` prefix). This mirrors the original setup exactly — adjust freely if you prefer a flatter scheme.
+> Note: the domain substitution produces `ente.yourdomain.tld` for most subdomains (e.g. `api.ente.yourdomain.tld`) but `enteyourdomain.tld` for the Photos app (no double `ente.` prefix). This mirrors the original setup exactly — adjust freely if you prefer a flatter scheme, for example photos.yourdomain.tld or similar.
 
 ## 3. Required ports & reverse proxy mapping
 
@@ -62,7 +62,7 @@ The `web` container serves several apps on different internal ports. Each one ne
 | Local port (NAS) | App | Reverse proxy subdomain (example) |
 |---|---|---|
 | 8080 | Museum (API/backend) | `api.ente.yourdomain.tld` |
-| 3000 | Photos web app | `photos.yourdomain.tld` |
+| 3000 | Photos web app | `ente.yourdomain.tld` |
 | 3001 | Accounts (passkeys) | `accounts.ente.yourdomain.tld` |
 | 3002 | Public Albums | `albums.ente.yourdomain.tld` |
 | 3003 | Auth *(not enabled by default)* | — |
@@ -88,7 +88,7 @@ In Portainer or Dockhand: **Stacks → Add stack**, paste the contents of `docke
 ## 5. First-run configuration
 
 ### Create your account
-Open `https://photos.yourdomain.tld`, sign up. The verification code appears in the `museum` container logs unless SMTP is configured (see below).
+Open `https://ente.yourdomain.tld`, sign up. The verification code appears in the `museum` container logs unless SMTP is configured (see below).
 
 ### Configure SMTP (email verification codes)
 Fill in the `smtp:` section in `museum.yaml` with your mail provider's details, then restart the `museum` container.
