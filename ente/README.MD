@@ -1,6 +1,6 @@
 # Ente Self-Hosted Stack for Synology
 
-A Docker Compose stack for self-hosting [Ente](https://ente.io) (end-to-end encrypted photo storage) on a Synology NAS, managed via **Portainer** or **Dockhand**, served behind a **reverse proxy with HTTPS**.
+A Docker Compose stack for self-hosting [Ente](https://ente.io) (end-to-end encrypted photo storage) on a Synology NAS, managed via **Portainer** or **Dockhand**, served behind any **reverse proxy with HTTPS**.
 
 This setup is based on Ente's official [self-hosting quickstart](https://ente.com/help/self-hosting/), adapted for Synology (bind mounts under `/volume1`, `restart: unless-stopped`, Docker Engine compatibility) and for running entirely behind subdomains of your own domain.
 
@@ -23,15 +23,17 @@ This setup is based on Ente's official [self-hosting quickstart](https://ente.co
 - Synology DSM with **Container Manager** (Docker) installed
 - **Portainer** or **Dockhand** for stack management
 - A domain you control with DNS access, for the reverse proxy subdomains
-- A reverse proxy capable of TLS termination — DSM's built-in reverse proxy (Control Panel → Login Portal → Advanced → Reverse Proxy) is sufficient
+- A reverse proxy capable of TLS termination — Pangolin, NPM or DSM's built-in reverse proxy (Control Panel → Login Portal → Advanced → Reverse Proxy) are sufficient
 
 ## 1. Directory setup
 
 On the Synology, create:
 
 ```sh
-mkdir -p /volume1/docker/ente/data /volume1/docker/ente/postgres-data /volume1/docker/ente/minio-data
+mkdir -p /volume1/docker/ente/data /volume1/docker/ente/postgres /volume1/docker/ente/minio
 ```
+
+or add them via the GUI using DSM.
 
 Place `museum.yaml` at `/volume1/docker/ente/museum.yaml`.
 
@@ -41,7 +43,7 @@ Both files contain `<PLACEHOLDER>` values that must be filled in **identically a
 
 | Placeholder | Description |
 |---|---|
-| `myente.tld` | Your own domain (see port/domain table below) |
+| `yourdomain.tld` | Your own domain (see port/domain table below) |
 | `<POSTGRES_PASSWORD>` | Any strong password for the Postgres `ente` user |
 | `<MINIO_ROOT_USER>` | A MinIO username, e.g. `ente-minio` |
 | `<MINIO_ROOT_PASSWORD>` | Any strong password for MinIO |
@@ -51,7 +53,7 @@ Both files contain `<PLACEHOLDER>` values that must be filled in **identically a
 | `<SMTP_PASSWORD>` | Password for your mail provider (for verification emails) |
 | `smtp.example.com`, `mailbox@example.com` | Your mail provider's host/username/sender address |
 
-> Note: the domain substitution produces `ente.myente.tld` for most subdomains (e.g. `api.ente.myente.tld`) but `photos.myente.tld` for the Photos app (no `ente.` prefix). This mirrors the original setup exactly — adjust freely if you prefer a flatter scheme.
+> Note: the domain substitution produces `ente.yourdomain.tld` for most subdomains (e.g. `api.ente.yourdomain.tld`) but `photos.yourdomain.tld` for the Photos app (no `ente.` prefix). This mirrors the original setup exactly — adjust freely if you prefer a flatter scheme.
 
 ## 3. Required ports & reverse proxy mapping
 
@@ -59,16 +61,16 @@ The `web` container serves several apps on different internal ports. Each one ne
 
 | Local port (NAS) | App | Reverse proxy subdomain (example) |
 |---|---|---|
-| 8080 | Museum (API/backend) | `api.ente.myente.tld` |
-| 3010 *(mapped from container port 3000)* | Photos web app | `photos.myente.tld` |
-| 3001 | Accounts (passkeys) | `accounts.ente.myente.tld` |
-| 3002 | Public Albums | `albums.ente.myente.tld` |
+| 8080 | Museum (API/backend) | `api.ente.yourdomain.tld` |
+| 3000 | Photos web app | `photos.yourdomain.tld` |
+| 3001 | Accounts (passkeys) | `accounts.ente.yourdomain.tld` |
+| 3002 | Public Albums | `albums.ente.yourdomain.tld` |
 | 3003 | Auth *(not enabled by default)* | — |
-| 3004 | Cast | `cast.ente.myente.tld` |
-| 3005 | Share / Public Locker | `share.ente.myente.tld` |
-| 3006 | Embed | `embed.ente.myente.tld` |
-| 3008 | Paste | `paste.ente.myente.tld` |
-| 3200 | MinIO (S3 API — used directly by the browser for uploads) | `storage.ente.myente.tld` |
+| 3004 | Cast | `cast.ente.yourdomain.tld` |
+| 3005 | Share / Public Locker | `share.ente.yourdomain.tld` |
+| 3006 | Embed | `embed.ente.yourdomain.tld` |
+| 3008 | Paste | `paste.ente.yourdomain.tld` |
+| 3200 | MinIO (S3 API — used directly by the browser for uploads) | `storage.ente.yourdomain.tld` |
 | 3201 | MinIO web console *(optional, not exposed by default)* | — |
 | 5432 | Postgres *(internal only, not exposed)* | — |
 
@@ -86,7 +88,7 @@ In Portainer or Dockhand: **Stacks → Add stack**, paste the contents of `docke
 ## 5. First-run configuration
 
 ### Create your account
-Open `https://photos.myente.tld`, sign up. The verification code appears in the `museum` container logs unless SMTP is configured (see below).
+Open `https://photos.yourdomain.tld`, sign up. The verification code appears in the `museum` container logs unless SMTP is configured (see below).
 
 ### Configure SMTP (email verification codes)
 Fill in the `smtp:` section in `museum.yaml` with your mail provider's details, then restart the `museum` container.
